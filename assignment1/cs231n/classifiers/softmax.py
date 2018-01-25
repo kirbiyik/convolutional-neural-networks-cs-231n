@@ -89,7 +89,7 @@ def softmax_loss_vectorized(W, X, y, reg):
     # hadamard product, divide each row element by row sum for softmax
     denom = denom.reshape(-1,1)
     big_denom = np.tile(denom, (1,C))
-    prob = np.multiply(exp_z, (1/big_denom))
+    prob = np.divide(exp_z, big_denom)
     
     y_one_hot = np.zeros((N, C)) 
     y_one_hot[np.arange(N), y] = 1

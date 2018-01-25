@@ -33,7 +33,10 @@ def svm_loss_naive(W, X, y, reg):
       if j == y[i]:
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
+      # gradient: Add Xi if not i==j, subtract Xi if i==j
       if margin > 0:
+        dW[:, j] += X[i]
+        dW[:, y[i]] -= X[i]
         loss += margin
 
   # Right now the loss is a sum over all training examples, but we want it
@@ -51,7 +54,8 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
-
+  # gradient computed above, normalise it
+  dW /= num_train
 
   return loss, dW
 
@@ -70,7 +74,21 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  num_classes = W.shape[1]
+  num_train = X.shape[0]
+
+  scores = X.dot(W)
+  # scores[np.arange(N), y] ->  1-1 mapping
+  correct_class_score = scores[np.arange(num_train), y]
+  margins = np.maximum(0, scores - correct_class_score.reshape(-1, 1) + 1)
+  margins[np.arange(num_train), y] = 0
+
+  loss = (np.sum(margins))/ num_train
+  # regularization
+  loss += 0.5 *  reg * np.sum(W * W)
+
+
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -85,7 +103,22 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  margin_mask = np.zeros(margins.shape)
+  margin_mask[margins > 0] = 1
+  """
+  See link below for hacking. lol...
+
+     mlxai.github.io/2017/01/06/
+     vectorized-implementation-of-svm-loss-and-gradient-update.html
+  """
+  dW += X.T.dot(margin_mask)
+
+  grad_mask = np.zeros(margins.shape)
+  grad_mask[np.arange(num_train), y] = -np.sum(margin_mask, axis=1).T
+  dW += X.T.dot(grad_mask)
+  dW /= num_train
+  dW += reg * W
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
