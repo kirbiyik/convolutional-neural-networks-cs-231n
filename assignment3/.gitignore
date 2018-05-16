@@ -1,0 +1,9 @@
+*.swp
+*.pyc
+.env/*
+.vscode/
+.pyre/
+.ipynb_checkpoints/
+*.DS_Store
+# gitignore the built release.
+assignment3/*
