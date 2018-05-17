@@ -140,15 +140,33 @@ class CaptioningRNN(object):
         # Note also that you are allowed to make use of functions from layers.py   #
         # in your implementation, if needed.                                       #
         ############################################################################
-        initial_hidden, cache = affine_forward(features, W_proj, b_proj)
+        initial_hidden, cache1 = affine_forward(features, W_proj, b_proj)
         # word_vector is (N, T, D) 
 
         word_vector_input, cache2 = word_embedding_forward(captions_in, W_embed)
         hidden_states, cache3 = rnn_forward(x=word_vector_input, 
                                            h0=initial_hidden, Wx=Wx, Wh=Wh, b=b)
-        out, cache3 = temporal_affine_forward(x=hidden_states, w=W_vocab, 
+        out, cache4 = temporal_affine_forward(x=hidden_states, w=W_vocab, 
                                              b=b_vocab)
         loss, dx = temporal_softmax_loss(x=out, y=captions_out, mask=mask)
+        
+
+        # backward
+        dout_affine, dW_vocab, db_vocab= temporal_affine_backward(dx, cache4)
+        dout_rnn, dh0, dWx, dWh, db = rnn_backward(dout_affine, cache3)
+        dW_embed = word_embedding_backward(dout_rnn, cache2)
+        _ , dW_proj, db_proj = affine_backward(dh0, cache1)
+        
+        grads.update({'W_embed' : dW_embed,
+                      'W_proj' : dW_proj,
+                      'b_proj' : db_proj,
+                      'Wx' : dWx,
+                      'Wh' : dWh,
+                      'b' : db,
+                      'W_vocab' : dW_vocab,
+                      'b_vocab' : db_vocab
+                      })
+
 
         ############################################################################
         #                             END OF YOUR CODE                             #
