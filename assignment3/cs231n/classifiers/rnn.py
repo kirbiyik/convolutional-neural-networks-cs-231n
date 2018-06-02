@@ -232,7 +232,23 @@ class CaptioningRNN(object):
         # NOTE: we are still working over minibatches in this function. Also if   #
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
-        pass
+        
+        # initially start token, then it will be sampled from output 
+        sampled_words = self._start * np.ones((N), dtype=np.int32)
+        # get initial hidden state from image
+        initial_hidden, _ = affine_forward(features, W_proj, b_proj)
+
+        prev_h = initial_hidden
+        # first tokens are <START> for each element of mini-batch
+        captions[:, 0] = sampled_words
+        for i in range(1, max_length):
+          # see the video for architecture of captioning rnn
+          x, _ = word_embedding_forward(sampled_words, W_embed)
+          next_h, _= rnn_step_forward(x, prev_h, Wx, Wh, b)
+          out, _ = affine_forward(next_h, W_vocab, b_vocab)
+          sampled_words = np.argmax(out, axis=1)
+          captions[:, i] = sampled_words
+          prev_h = next_h
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
